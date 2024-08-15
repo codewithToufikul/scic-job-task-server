@@ -23,9 +23,18 @@ const client = new MongoClient(uri, {
     try {
       await client.connect();
 
+      const productsCollection = client.db("productpeack").collection("productsCollection");
+
       app.get('/', (req, res) => {
         res.send('Hello World!')
       })
+
+      app.get("/products", async(req, res)=>{
+        const result = await productsCollection.find().toArray()
+        res.send(result)
+      })
+
+
       console.log("You successfully connected to MongoDB!");
     } finally {
 
