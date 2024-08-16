@@ -29,10 +29,38 @@ const client = new MongoClient(uri, {
         res.send('Hello World!')
       })
 
-      app.get("/products", async(req, res)=>{
-        const result = await productsCollection.find().toArray()
-        res.send(result)
-      })
+      app.get("/products", async (req, res) => {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 6;
+        const searchQuery = req.query.searchQuery || "";
+        const skip = (page - 1) * limit;
+      
+        try {
+          const productsCollection = client.db("productpeack").collection("productsCollection");
+      
+          const filter = {
+            $or: [
+              { ProductName: { $regex: searchQuery, $options: "i" } },
+              { Category: { $regex: searchQuery, $options: "i" } },
+              { ProductCreationDateAndTime: { $regex: searchQuery, $options: "i" } },
+            ],
+          };
+      
+          const totalProducts = await productsCollection.countDocuments(filter);
+          const products = await productsCollection.find(filter).skip(skip).limit(limit).toArray();
+      
+          res.json({
+            products,
+            currentPage: page,
+            totalPages: Math.ceil(totalProducts / limit),
+            totalProducts,
+          });
+        } catch (err) {
+          res.status(500).json({ message: "Error fetching products", err });
+        }
+      });
+      
+    
 
 
       console.log("You successfully connected to MongoDB!");
