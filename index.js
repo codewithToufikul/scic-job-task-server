@@ -60,6 +60,19 @@ const client = new MongoClient(uri, {
         }
       });
       
+// Server-side route to handle fetching products by category
+app.get("/products/:category", async (req, res) => {
+  const category = req.params.category;
+
+  try {
+    const products = await productsCollection.find({ Category: category }).toArray();
+    res.status(200).json({ products });
+  } catch (err) {
+    console.error("Error fetching products by category", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
     
 
 
