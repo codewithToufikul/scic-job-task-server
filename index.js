@@ -37,6 +37,7 @@ async function run() {
       const searchQuery = req.query.searchQuery || "";
       const minPrice = parseInt(req.query.minPrice) || 0;
       const maxPrice = parseInt(req.query.maxPrice) || Number.MAX_SAFE_INTEGER;
+      const sortOption = req.query.sort || "default";
       const skip = (page - 1) * limit;
     
       try {
@@ -50,21 +51,26 @@ async function run() {
               $or: [
                 { ProductName: { $regex: searchQuery, $options: "i" } },
                 { Category: { $regex: searchQuery, $options: "i" } },
-                {
-                  ProductCreationDateAndTime: {
-                    $regex: searchQuery,
-                    $options: "i",
-                  },
-                },
+                { ProductCreationDateAndTime: { $regex: searchQuery, $options: "i" } },
               ],
             },
             { Price: { $gte: minPrice, $lte: maxPrice } },
           ],
         };
     
+        let sortCriteria = {};
+        if (sortOption === "price-asc") {
+          sortCriteria = { Price: 1 }; // Low to High
+        } else if (sortOption === "price-desc") {
+          sortCriteria = { Price: -1 }; // High to Low
+        } else if (sortOption === "date-newest") {
+          sortCriteria = { ProductCreationDateAndTime: -1 }; // Newest First
+        }
+    
         const totalProducts = await productsCollection.countDocuments(filter);
         const products = await productsCollection
           .find(filter)
+          .sort(sortCriteria)
           .skip(skip)
           .limit(limit)
           .toArray();
@@ -79,6 +85,7 @@ async function run() {
         res.status(500).json({ message: "Error fetching products", err });
       }
     });
+    
     
 
     app.get("/products/category/:category", async (req, res) => {
