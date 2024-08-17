@@ -35,33 +35,40 @@ async function run() {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 6;
       const searchQuery = req.query.searchQuery || "";
+      const minPrice = parseInt(req.query.minPrice) || 0;
+      const maxPrice = parseInt(req.query.maxPrice) || Number.MAX_SAFE_INTEGER;
       const skip = (page - 1) * limit;
-
+    
       try {
         const productsCollection = client
           .db("productpeack")
           .collection("productsCollection");
-
+    
         const filter = {
-          $or: [
-            { ProductName: { $regex: searchQuery, $options: "i" } },
-            { Category: { $regex: searchQuery, $options: "i" } },
+          $and: [
             {
-              ProductCreationDateAndTime: {
-                $regex: searchQuery,
-                $options: "i",
-              },
+              $or: [
+                { ProductName: { $regex: searchQuery, $options: "i" } },
+                { Category: { $regex: searchQuery, $options: "i" } },
+                {
+                  ProductCreationDateAndTime: {
+                    $regex: searchQuery,
+                    $options: "i",
+                  },
+                },
+              ],
             },
+            { Price: { $gte: minPrice, $lte: maxPrice } },
           ],
         };
-
+    
         const totalProducts = await productsCollection.countDocuments(filter);
         const products = await productsCollection
           .find(filter)
           .skip(skip)
           .limit(limit)
           .toArray();
-
+    
         res.json({
           products,
           currentPage: page,
@@ -72,6 +79,7 @@ async function run() {
         res.status(500).json({ message: "Error fetching products", err });
       }
     });
+    
 
     app.get("/products/category/:category", async (req, res) => {
       const category = req.params.category;
