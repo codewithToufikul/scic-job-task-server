@@ -29,7 +29,6 @@ function connectToMongo() {
   return clientPromise;
 }
 
-// Middleware to connect to MongoDB
 app.use(async (req, res, next) => {
   try {
     await connectToMongo();
@@ -54,7 +53,7 @@ app.get("/products", async (req, res) => {
   const minPrice = parseFloat(req.query.minPrice) || 0;
   const maxPrice = parseFloat(req.query.maxPrice) || Infinity;
   const sortField = req.query.sortField || "ProductCreationDateAndTime";
-  const sortOrder = req.query.sortOrder === "asc" ? 1 : -1; // Default to descending order
+  const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
   const skip = (page - 1) * limit;
 
   try {
